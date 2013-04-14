@@ -17,6 +17,7 @@ import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 public class SQLiteProvider extends ContentProvider {
     
@@ -35,7 +36,7 @@ public class SQLiteProvider extends ContentProvider {
        Table1(BaseColumns._ID, "title", "note"),
         
        /** Table2 テーブル. */
-       Table2(BaseColumns._ID, "title2", "note2");
+       Table2(BaseColumns._ID, "date", "title2", "note2");
         
        /**
         * コンストラクタ. カラムを定義する.
@@ -54,6 +55,12 @@ public class SQLiteProvider extends ContentProvider {
         
        /** 対象IDのデータに対して処理をしに行く時のコード. */
        private final int byIdCode = ordinal() * 10 + 1;
+       
+      /** 対象IDのデータに対して処理をしに行く時のコード. */
+      private final int byDateAllCode = ordinal() * 10 + 2;
+       
+      /** 対象IDのデータに対して処理をしに行く時のコード. */
+      private final int byDateCode = ordinal() * 10 + 3;
         
        /** そのテーブル固有のCONTENT_URI表現. コンテンツリゾルバからこれを使用してアクセスする. */
        public final Uri contentUri = Uri.parse("content://" + AUTHORITY + "/" + tableName);
@@ -75,6 +82,8 @@ public class SQLiteProvider extends ContentProvider {
        sUriMatcher.addURI(AUTHORITY, Contract.Table1.tableName + "/#", Contract.Table1.byIdCode);
        sUriMatcher.addURI(AUTHORITY, Contract.Table2.tableName, Contract.Table2.allCode);
        sUriMatcher.addURI(AUTHORITY, Contract.Table2.tableName + "/#", Contract.Table2.byIdCode);
+       sUriMatcher.addURI(AUTHORITY, Contract.Table2.tableName + "/date", Contract.Table2.byDateAllCode);
+       sUriMatcher.addURI(AUTHORITY, Contract.Table2.tableName + "/date/*", Contract.Table2.byDateCode);
    }
 
    /** SQLiteOpenHelperのインスタンス. */
@@ -109,7 +118,22 @@ public class SQLiteProvider extends ContentProvider {
    @Override
    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
        checkUri(uri);
+       final int code = sUriMatcher.match(uri);
        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
+
+       for (final Contract contract : Contract.values()) {
+           if (code == contract.byDateAllCode) {
+               String sql = "select date from table2 group by date";
+               return db.rawQuery(sql, null);
+           } else if (code == contract.byDateCode) {
+               String sql = "select _id, date, title2, note2 from table2 where date = \"" + 
+            		   uri.getPathSegments().get(2) + 
+            		   "\"";
+               Log.d("SQLiteProvider", "sql string is " + sql);
+               return db.rawQuery(sql, null);
+           }
+       }
+
        Cursor cursor = db.query(uri.getPathSegments().get(0), projection, appendSelection(uri, selection),
                appendSelectionArgs(uri, selectionArgs), null, null, sortOrder);
        cursor.setNotificationUri(getContext().getContentResolver(), uri);
@@ -173,6 +197,10 @@ public class SQLiteProvider extends ContentProvider {
        for (final Contract contract : Contract.values()) {
            if (code == contract.allCode) {
                return contract.mimeTypeForMany;
+           } else if (code == contract.byDateAllCode) {
+               return contract.mimeTypeForMany;
+           } else if (code == contract.byDateCode) {
+               return contract.mimeTypeForMany;
            } else if (code == contract.byIdCode) {
                return contract.mimeTypeForOne;
            }
@@ -191,6 +219,10 @@ public class SQLiteProvider extends ContentProvider {
            if (code == contract.allCode) {
                return;
            } else if (code == contract.byIdCode) {
+               return;
+           } else if (code == contract.byDateAllCode) {
+               return;
+           } else if (code == contract.byDateCode) {
                return;
            }
        }
@@ -261,6 +293,7 @@ public class SQLiteProvider extends ContentProvider {
                		"note TEXT" +
                		")");
                db.execSQL("CREATE TABLE table2 (_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+               		"date TEXT, " +
                		"title2 TEXT, " +
                		"note2 TEXT" +
                		")");

@@ -18,7 +18,7 @@
      		android:exported="false"/>
         <activity
             android:name="com.example.cpexample.MainActivity"
-            android:label="@string/app_name" >
+            android:label="MainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -28,7 +28,7 @@
         <activity android:name="MainEdit" />
         <activity
             android:name="com.example.cpexample.Main2Activity"
-            android:label="@string/app_name" >
+            android:label="Main2Activity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -36,6 +36,15 @@
             </intent-filter>
         </activity>
         <activity android:name="Main2Edit" />
+        <activity
+            android:name="com.example.cpexample.TestActivity"
+            android:label="TestActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         </application>
 
 </manifest>
